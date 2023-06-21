@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:docusign="http://www.mulesoft.org/schema/mule/docusign" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/docusign http://www.mulesoft.org/schema/mule/docusign/current/mule-docusign.xsd">
+	<flow name="postDocument" doc:id="88df73a8-3da2-4804-9544-ea28ff780671" >
+		<ee:transform doc:name="Input JSON" doc:id="4186fb6b-dbb6-44f9-947f-2f398042f575" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[output application/json
+import * from dw::core::Binaries
+---
+{
+  "emailSubject": payload.parts.Subject.content,
+  "emailBlurb": payload.parts.Body.content,
+  "status": "sent",
+  "recipients": {
+    "signers": [
+      {
+        "email": payload.parts.RecipientEmail.content,
+        "name": payload.parts.RecipientName.content,
+        "recipientId": "1",
+        "tabs": {
+          "signHereTabs": [
+            {
+              "documentId": payload.parts.DocumentID.content,
+              "pageNumber": "1",
+              "xPosition": "100",
+              "yPosition": "100"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "documents": [
+    {
+      "documentId": payload.parts.DocumentID.content,
+      "name": payload.parts.Document.headers."Content-Disposition".filename,
+      "documentBase64": toBase64(payload.parts.Document.content)
+    }
+  ]
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<docusign:create-v21-accounts-envelopes-by-account-id doc:name="Envelopes Post Envelopes" doc:id="7d92ca14-0487-4391-a38b-e25baf1cde7c" config-ref="Docusign_Connector_Config" accountId="${secure::docusign.account_id}"/>
+		<logger level="INFO" doc:name="Logger" doc:id="07694bdb-3056-4395-b6cb-8a19b68aa0eb" />
+		<error-handler ref="Common_Error_Handler" />
+	</flow>
+	<flow name="getDocument" doc:id="fcc67c3f-fe23-4930-a1ff-23278904355e" >
+		<docusign:get-v21-accounts-envelopes-documents-by-account-id-envelope-id-document-id doc:name="Documents Get Document" doc:id="3719b273-b20a-4df6-8553-8b346e220eee" config-ref="Docusign_Connector_Config" accountId="${secure::docusign.account_id}" documentId="#[attributes.queryParams.document_id]" envelopeId="#[attributes.queryParams.envelope_id]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a5d2a8bb-09b7-4ddd-befd-23258a791dd9" />
+		<error-handler ref="Common_Error_Handler" />
+	</flow>
+</mule>

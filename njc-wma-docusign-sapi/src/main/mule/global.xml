@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:docusign="http://www.mulesoft.org/schema/mule/docusign" xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/docusign http://www.mulesoft.org/schema/mule/docusign/current/mule-docusign.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="b2bc3909-ec7d-4605-95a3-fa363af7effe" file="properties\common-properties.yaml" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="f753b240-dc67-448c-8b55-b4c693805db7" >
+		<http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:key-store type="jks" path="keystore-name.jks" keyPassword="${secure::docusign.https-password}" password="${secure::docusign.https-password}" alias="key-alias"/>
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="57623d55-d50e-4b7e-92c8-781f48d8c185" file="properties\secured-properties.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="38d47e86-e552-49f6-858e-76026c1edda2" file="properties\secured-properties.yaml" key="apical" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<docusign:config name="Docusign_Connector_Config" doc:name="Docusign Connector Config" doc:id="fc73f4bb-29bb-47eb-9719-c5027cfaad49" >
+		<docusign:oauth-connection baseUri="https://demo.docusign.net/restapi">
+			<docusign:oauth-authorization-code consumerKey="${secure::docusign.consumer_key}" consumerSecret="${secure::docusign.consumer_secret}" />
+			<docusign:oauth-callback-config listenerConfig="HTTP_Listener_config" callbackPath="/callback" authorizePath="/authorize" externalCallbackUrl="https://njc-wma-docusign-sapi.us-e2.cloudhub.io/callback"/>
+		</docusign:oauth-connection>
+	</docusign:config>
+</mule>
